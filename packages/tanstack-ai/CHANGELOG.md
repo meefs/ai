@@ -1,5 +1,13 @@
 # @cloudflare/tanstack-ai
 
+## 0.1.2
+
+### Patch Changes
+
+- [#406](https://github.com/cloudflare/ai/pull/406) [`9af703b`](https://github.com/cloudflare/ai/commit/9af703b93df4a6c7f4a1d10f895d488344b71425) Thanks [@vaibhavshn](https://github.com/vaibhavshn)! - Pass API Key properly for Gemini Tanstack AI Adapter
+
+- [#400](https://github.com/cloudflare/ai/pull/400) [`8822603`](https://github.com/cloudflare/ai/commit/882260300ccbf78a8c40e5ce54a49d02c7ad3c8c) Thanks [@threepointone](https://github.com/threepointone)! - Add config validation to all Workers AI adapter constructors that throws a clear error when neither a binding, credentials (accountId + apiKey), nor a gateway configuration is provided. Widen all model type parameters (WorkersAiTextModel, WorkersAiImageModel, WorkersAiEmbeddingModel, WorkersAiTranscriptionModel, WorkersAiTTSModel, WorkersAiSummarizeModel) to accept arbitrary strings while preserving autocomplete for known models.
+
 ## 0.1.1
 
 ### Patch Changes

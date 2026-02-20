@@ -174,16 +174,16 @@ const credentialsConfig: AiGatewayCredentialsConfig = {
 };
 
 const geminiConfig: GeminiGatewayConfig = {
-	accountId: 'test-account',
-	gatewayId: 'test-gateway',
-	apiKey: 'test-api-key',
+	accountId: "test-account",
+	gatewayId: "test-gateway",
+	apiKey: "test-api-key",
 };
 
 const geminiConfigWithCfKey: GeminiGatewayConfig = {
-	accountId: 'test-account',
-	gatewayId: 'test-gateway',
-	apiKey: 'test-api-key',
-	cfApiKey: 'cf-test-key',
+	accountId: "test-account",
+	gatewayId: "test-gateway",
+	apiKey: "test-api-key",
+	cfApiKey: "cf-test-key",
 };
 
 const mockBindingRun = vi.fn(async (..._args: unknown[]) => new Response("ok"));

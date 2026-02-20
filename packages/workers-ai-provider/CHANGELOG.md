@@ -1,5 +1,11 @@
 # workers-ai-provider
 
+## 3.1.2
+
+### Patch Changes
+
+- [#400](https://github.com/cloudflare/ai/pull/400) [`8822603`](https://github.com/cloudflare/ai/commit/882260300ccbf78a8c40e5ce54a49d02c7ad3c8c) Thanks [@threepointone](https://github.com/threepointone)! - Add early config validation to `createWorkersAI` that throws a clear error when neither a binding nor credentials (accountId + apiKey) are provided. Widen all model type parameters (TextGenerationModels, ImageGenerationModels, EmbeddingModels, TranscriptionModels, SpeechModels, RerankingModels) to accept arbitrary strings while preserving autocomplete for known models.
+
 ## 3.1.1
 
 ### Patch Changes
