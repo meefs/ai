@@ -23,19 +23,7 @@ import type { AiGatewayCredentialsConfig, AiGatewayConfig } from "../utils/creat
  * See {@link https://github.com/googleapis/js-genai/issues/999 | googleapis/js-genai#999}.
  */
 export type GeminiGatewayConfig = AiGatewayCredentialsConfig &
-	AiGatewayConfig &
-	(
-		| {
-				/** Cloudflare API Key for AI Gateway */
-				cfApiKey: string;
-		  }
-		| {
-				/** API Key for Google AI Studio */
-				apiKey: string;
-				/** Cloudflare API Key for AI Gateway */
-				cfApiKey?: string;
-		  }
-	);
+	AiGatewayConfig;
 
 /**
  * Build Gemini client config that routes through AI Gateway.
