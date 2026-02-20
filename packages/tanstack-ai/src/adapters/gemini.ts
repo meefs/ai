@@ -22,8 +22,7 @@ import type { AiGatewayCredentialsConfig, AiGatewayConfig } from "../utils/creat
  * Includes cache control options from AiGatewayConfig.
  * See {@link https://github.com/googleapis/js-genai/issues/999 | googleapis/js-genai#999}.
  */
-export type GeminiGatewayConfig = AiGatewayCredentialsConfig &
-	AiGatewayConfig;
+export type GeminiGatewayConfig = AiGatewayCredentialsConfig & AiGatewayConfig;
 
 /**
  * Build Gemini client config that routes through AI Gateway.
