@@ -52,7 +52,6 @@ app.post("/analyze", async (c) => {
 					role: "user",
 				},
 			],
-			// @ts-expect-error is it not in the types yet?
 			model: workersAI("@cf/meta/llama-3.2-11b-vision-instruct"),
 		});
 

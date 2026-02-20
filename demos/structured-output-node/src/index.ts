@@ -18,7 +18,6 @@ const workersai = createWorkersAI({
 console.log("Generating structured output for a sourdough recipe...");
 
 const { output: object } = await generateText({
-	// @ts-expect-error - this is a valid model, we need to fix this
 	model: workersai("@cf/meta/llama-3.3-70b-instruct-fp8-fast"),
 	prompt: "Please give me a recipe for sourdough bread.",
 	output: Output.object({

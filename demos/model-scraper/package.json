@@ -19,21 +19,21 @@
 		"type-check": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@ai-sdk/openai": "^3.0.27",
-		"agents": "^0.4.1",
-		"ai": "^6.0.82",
-		"hono": "^4.11.9",
-		"workers-ai-provider": "^3.1.1",
+		"@ai-sdk/openai": "^3.0.30",
+		"agents": "^0.5.0",
+		"ai": "^6.0.94",
+		"hono": "^4.12.0",
+		"workers-ai-provider": "^3.1.2",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
-		"@cloudflare/vite-plugin": "^1.25.0",
-		"@cloudflare/vitest-pool-workers": "^0.12.12",
-		"oxfmt": "^0.32.0",
-		"oxlint": "^1.47.0",
+		"@cloudflare/vite-plugin": "^1.25.2",
+		"@cloudflare/vitest-pool-workers": "^0.12.14",
+		"oxfmt": "^0.34.0",
+		"oxlint": "^1.49.0",
 		"typescript": "5.9.3",
 		"vite": "^7.3.1",
 		"vitest": "~3.2.4",
-		"wrangler": "^4.65.0"
+		"wrangler": "^4.67.0"
 	}
 }

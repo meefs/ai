@@ -98,26 +98,26 @@
 		"test:e2e:binding": "vitest --config vitest.e2e.config.ts --watch=false test/e2e/workers-ai-binding.e2e.test.ts"
 	},
 	"dependencies": {
-		"openai": "^6.21.0"
+		"openai": "^6.22.0"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260212.0",
-		"@microsoft/api-extractor": "^7.56.3",
-		"@tanstack/ai": "^0.5.0",
-		"dotenv": "^17.2.4"
+		"@cloudflare/workers-types": "^4.20260227.0",
+		"@microsoft/api-extractor": "^7.57.1",
+		"@tanstack/ai": "^0.5.1",
+		"dotenv": "^17.3.1"
 	},
 	"peerDependencies": {
 		"@tanstack/ai": "^0.5.0"
 	},
 	"optionalDependencies": {
-		"@anthropic-ai/sdk": "^0.74.0",
-		"@google/genai": "^1.41.0",
+		"@anthropic-ai/sdk": "^0.78.0",
+		"@google/genai": "^1.42.0",
 		"@openrouter/sdk": "^0.8.0",
 		"@tanstack/ai-anthropic": "^0.5.0",
 		"@tanstack/ai-gemini": "^0.5.0",
 		"@tanstack/ai-grok": "^0.5.0",
 		"@tanstack/ai-openai": "^0.5.0",
-		"@tanstack/ai-openrouter": "^0.5.0"
+		"@tanstack/ai-openrouter": "^0.5.1"
 	},
-	"packageManager": "pnpm@10.29.3"
+	"packageManager": "pnpm@10.30.1"
 }
