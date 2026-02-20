@@ -22,7 +22,8 @@ import type { AiGatewayCredentialsConfig, AiGatewayConfig } from "../utils/creat
  * Includes cache control options from AiGatewayConfig.
  * See {@link https://github.com/googleapis/js-genai/issues/999 | googleapis/js-genai#999}.
  */
-export type GeminiGatewayConfig = AiGatewayCredentialsConfig & AiGatewayConfig;
+export type GeminiGatewayConfig = AiGatewayCredentialsConfig &
+	AiGatewayConfig;
 
 /**
  * Build Gemini client config that routes through AI Gateway.
@@ -50,9 +51,11 @@ function buildGeminiGatewayConfig(config: GeminiGatewayConfig) {
 	}
 
 	const headers: Record<string, string> = {};
-	if (config.cfApiKey) {
+
+	if (config.apiKey && config.cfApiKey) {
 		headers["cf-aig-authorization"] = `Bearer ${config.cfApiKey}`;
 	}
+
 	if (config.skipCache) {
 		headers["cf-aig-skip-cache"] = "true";
 	}
@@ -66,8 +69,16 @@ function buildGeminiGatewayConfig(config: GeminiGatewayConfig) {
 		headers["cf-aig-metadata"] = JSON.stringify(config.metadata);
 	}
 
+	const apiKey = config.apiKey ?? config.cfApiKey;
+
+	if (!apiKey) {
+		throw new Error(
+			"If you want to use BYOK or unified billing, you need to pass the Cloudflare AI Gateway API key.",
+		);
+	}
+
 	return {
-		apiKey: config.apiKey ?? "unused",
+		apiKey,
 		httpOptions: {
 			baseUrl: `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayId}/google-ai-studio`,
 			headers: Object.keys(headers).length > 0 ? headers : undefined,

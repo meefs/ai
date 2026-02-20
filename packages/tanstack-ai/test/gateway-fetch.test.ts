@@ -154,6 +154,7 @@ describe("createGatewayFetch", () => {
 		const credentialsConfig: AiGatewayCredentialsConfig = {
 			accountId: "test-account",
 			gatewayId: "test-gateway",
+			apiKey: "test-cf-api-key"
 		};
 
 		it("should call fetch with the correct gateway URL", async () => {

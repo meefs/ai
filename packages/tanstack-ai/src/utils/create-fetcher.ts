@@ -19,7 +19,7 @@ export interface AiGatewayBindingConfig {
 	apiKey?: string;
 }
 
-export interface AiGatewayCredentialsConfig {
+export type AiGatewayCredentialsConfig = {
 	/**
 	 * The Cloudflare account ID
 	 */
@@ -28,15 +28,19 @@ export interface AiGatewayCredentialsConfig {
 	 * The AI Gateway ID
 	 */
 	gatewayId: string;
-	/**
-	 * The Provider API Key if you want to manually pass it, ignore if using Unified Billing or BYOK.
-	 */
-	apiKey?: string;
-	/**
-	 * The Cloudflare AI Gateway API Key, required if your Gateway is authenticated.
-	 */
-	cfApiKey?: string;
-}
+} & (
+	| {
+			/** Cloudflare API Key for AI Gateway */
+			cfApiKey: string;
+			apiKey?: string;
+	  }
+	| {
+			/** Provider API Key */
+			apiKey: string;
+			/** Cloudflare API Key for AI Gateway */
+			cfApiKey?: string;
+	  }
+);
 
 export interface AiGatewayConfig {
 	skipCache?: boolean;

@@ -2,8 +2,8 @@ import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import type {
 	AiGatewayBindingConfig,
 	AiGatewayCredentialsConfig,
-	AiGatewayConfig,
 } from "../src/utils/create-fetcher";
+import type { GeminiGatewayConfig } from "../src";
 
 // ---------------------------------------------------------------------------
 // Mock upstream adapter classes — capture constructor args for assertions.
@@ -173,11 +173,17 @@ const credentialsConfig: AiGatewayCredentialsConfig = {
 	apiKey: "test-api-key",
 };
 
-const credentialsConfigWithCfKey: AiGatewayCredentialsConfig = {
-	accountId: "test-account",
-	gatewayId: "test-gateway",
-	apiKey: "test-api-key",
-	cfApiKey: "cf-test-key",
+const geminiConfig: GeminiGatewayConfig = {
+	accountId: 'test-account',
+	gatewayId: 'test-gateway',
+	apiKey: 'test-api-key',
+};
+
+const geminiConfigWithCfKey: GeminiGatewayConfig = {
+	accountId: 'test-account',
+	gatewayId: 'test-gateway',
+	apiKey: 'test-api-key',
+	cfApiKey: 'cf-test-key',
 };
 
 const mockBindingRun = vi.fn(async (..._args: unknown[]) => new Response("ok"));
@@ -255,7 +261,7 @@ describe("Gemini gateway adapters", () => {
 
 	it("createGeminiChat with credentials config", async () => {
 		const { createGeminiChat } = await import("../src/adapters/gemini");
-		createGeminiChat("gemini-2.5-flash" as any, credentialsConfig);
+		createGeminiChat("gemini-2.5-flash" as any, geminiConfig);
 
 		const config = assertGeminiConfig(mockGeminiTextCtor, "test-api-key");
 		expect(config.httpOptions.baseUrl).toBe(
@@ -266,7 +272,7 @@ describe("Gemini gateway adapters", () => {
 
 	it("createGeminiChat includes cf-aig-authorization header when cfApiKey provided", async () => {
 		const { createGeminiChat } = await import("../src/adapters/gemini");
-		createGeminiChat("gemini-2.5-flash" as any, credentialsConfigWithCfKey);
+		createGeminiChat("gemini-2.5-flash" as any, geminiConfigWithCfKey);
 
 		const [config] = mockGeminiTextCtor.mock.calls[0]!;
 		expect(config.httpOptions.headers).toEqual({
@@ -276,7 +282,7 @@ describe("Gemini gateway adapters", () => {
 
 	it("createGeminiChat omits headers when no cfApiKey or cache options", async () => {
 		const { createGeminiChat } = await import("../src/adapters/gemini");
-		createGeminiChat("gemini-2.5-flash" as any, credentialsConfig);
+		createGeminiChat("gemini-2.5-flash" as any, geminiConfig);
 
 		const [config] = mockGeminiTextCtor.mock.calls[0]!;
 		expect(config.httpOptions.headers).toBeUndefined();
@@ -284,8 +290,8 @@ describe("Gemini gateway adapters", () => {
 
 	it("createGeminiChat passes cache headers via httpOptions.headers", async () => {
 		const { createGeminiChat } = await import("../src/adapters/gemini");
-		const configWithCache: AiGatewayCredentialsConfig & AiGatewayConfig = {
-			...credentialsConfig,
+		const configWithCache: GeminiGatewayConfig = {
+			...geminiConfig,
 			skipCache: true,
 			cacheTtl: 300,
 			customCacheKey: "my-key",
@@ -302,7 +308,7 @@ describe("Gemini gateway adapters", () => {
 
 	it("createGeminiImage with credentials config", async () => {
 		const { createGeminiImage } = await import("../src/adapters/gemini");
-		createGeminiImage("imagen-4.0-generate-001" as any, credentialsConfig);
+		createGeminiImage("imagen-4.0-generate-001" as any, geminiConfig);
 
 		assertGeminiConfig(mockGeminiImageCtor, "test-api-key");
 		expect(mockGeminiImageCtor.mock.calls[0]![1]).toBe("imagen-4.0-generate-001");
@@ -310,7 +316,7 @@ describe("Gemini gateway adapters", () => {
 
 	it("createGeminiSummarize with credentials config", async () => {
 		const { createGeminiSummarize } = await import("../src/adapters/gemini");
-		createGeminiSummarize("gemini-2.0-flash" as any, credentialsConfig);
+		createGeminiSummarize("gemini-2.0-flash" as any, geminiConfig);
 
 		assertGeminiConfig(mockGeminiSummarizeCtor, "test-api-key");
 		expect(mockGeminiSummarizeCtor.mock.calls[0]![1]).toBe("gemini-2.0-flash");
@@ -318,7 +324,7 @@ describe("Gemini gateway adapters", () => {
 
 	it("createGeminiTts with credentials config", async () => {
 		const { createGeminiTts } = await import("../src/adapters/gemini");
-		createGeminiTts("gemini-2.5-flash-preview-tts" as any, credentialsConfig);
+		createGeminiTts("gemini-2.5-flash-preview-tts" as any, geminiConfig);
 
 		assertGeminiConfig(mockGeminiTTSCtor, "test-api-key");
 		expect(mockGeminiTTSCtor.mock.calls[0]![1]).toBe("gemini-2.5-flash-preview-tts");
@@ -352,15 +358,6 @@ describe("Gemini gateway adapters", () => {
 		expect(() =>
 			createGeminiTts("gemini-2.5-flash-preview-tts" as any, bindingStyleConfig as any),
 		).toThrow(/googleapis\/js-genai/);
-	});
-
-	it("createGeminiChat defaults apiKey to 'unused'", async () => {
-		const { createGeminiChat } = await import("../src/adapters/gemini");
-		const noKeyConfig = { ...credentialsConfig, apiKey: undefined };
-		createGeminiChat("gemini-2.5-flash" as any, noKeyConfig as any);
-
-		const [config] = mockGeminiTextCtor.mock.calls[0]!;
-		expect(config.apiKey).toBe("unused");
 	});
 });
 
