@@ -310,6 +310,8 @@ const { results } = await rerank({
 
 [AI Search](https://developers.cloudflare.com/ai-search/) is Cloudflare's managed RAG service. Connect your data and query it with natural language.
 
+> For Cloudflare's new `ai_search_namespaces` Workers binding — upload files to AI Search for indexing, then search or chat over them — use the dedicated [`ai-search-provider`](../ai-search-provider/README.md) package. The `createAISearch` shown here wraps the legacy `AutoRAG` binding.
+
 ```jsonc
 // wrangler.jsonc
 {
