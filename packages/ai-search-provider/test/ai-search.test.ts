@@ -1,5 +1,6 @@
 import { generateText, streamText } from "ai";
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod/v4";
 import { createAISearchNamespace } from "../src";
 
 const chunks: AiSearchSearchResponse["chunks"] = [
@@ -182,12 +183,41 @@ describe("createAISearchNamespace", () => {
 		expect(namespace.list).toHaveBeenCalledWith({ per_page: 10 });
 	});
 
-	it("warns when AI SDK generation options are ignored", async () => {
+	it("forwards tools and toolChoice to the binding", async () => {
 		const { instance } = createMockInstance();
 		const namespace = createMockNamespace(instance);
 		const docs = createAISearchNamespace({ binding: namespace }).get("docs");
 
-		const result = await generateText({
+		await generateText({
+			model: docs.chat(),
+			messages: [{ role: "user", content: "What is 2+2?" }],
+			tools: {
+				calculator: {
+					description: "Add two numbers",
+					inputSchema: z.object({
+						a: z.number(),
+						b: z.number(),
+					}),
+				},
+			},
+			toolChoice: "required",
+		});
+
+		const call = (instance.chatCompletions as ReturnType<typeof vi.fn>).mock.calls[0][0];
+		expect(call.tools).toHaveLength(1);
+		expect(call.tools[0].type).toBe("function");
+		expect(call.tools[0].function.name).toBe("calculator");
+		expect(call.tools[0].function.description).toBe("Add two numbers");
+		expect(call.tools[0].function.parameters).toBeDefined();
+		expect(call.tool_choice).toBe("required");
+	});
+
+	it("forwards generation options to the binding", async () => {
+		const { instance } = createMockInstance();
+		const namespace = createMockNamespace(instance);
+		const docs = createAISearchNamespace({ binding: namespace }).get("docs");
+
+		await generateText({
 			model: docs.chat(),
 			messages: [{ role: "user", content: "Hello" }],
 			maxOutputTokens: 10,
@@ -198,22 +228,14 @@ describe("createAISearchNamespace", () => {
 			seed: 123,
 		});
 
-		expect(
-			(result.warnings ?? []).map((warning) =>
-				"feature" in warning ? warning.feature : undefined,
-			),
-		).toEqual(
-			expect.arrayContaining([
-				"maxOutputTokens",
-				"temperature",
-				"stopSequences",
-				"topP",
-				"topK",
-				"seed",
-			]),
-		);
 		expect(instance.chatCompletions).toHaveBeenCalledWith({
 			messages: [{ role: "user", content: "Hello" }],
+			temperature: 0.2,
+			max_tokens: 10,
+			top_p: 0.9,
+			top_k: 20,
+			stop: ["STOP"],
+			seed: 123,
 		});
 	});
 

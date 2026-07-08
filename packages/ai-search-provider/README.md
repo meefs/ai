@@ -33,6 +33,19 @@ await docs.items.upload("guide.md", "# Guide");
 
 A `default` namespace is created for every account — bind `ai_search_namespaces` to `default` if you don't need multiple namespaces. `aiSearch.get(name)` is synchronous and resolved lazily; no network call is made until you use the returned instance client. Streaming works the same way — use `streamText` instead of `generateText`.
 
+### Generation options
+
+Standard AI SDK generation options are forwarded to the upstream model configured in your AI Search instance. You can pass `temperature`, `maxOutputTokens`, `topP`, `topK`, `frequencyPenalty`, `presencePenalty`, `stopSequences`, `seed`, and `responseFormat` directly to `generateText` / `streamText`:
+
+```ts
+const { text } = await generateText({
+	model: docs.chat(),
+	messages: [{ role: "user", content: "Summarize the guide" }],
+	temperature: 0.3,
+	maxOutputTokens: 200,
+	topP: 0.9,
+});
+
 ## API
 
 ```ts

@@ -45,14 +45,63 @@ describe("convertToAISearchMessages", () => {
 		]);
 	});
 
-	it("throws on non-text (file) content", () => {
+	it("converts image file parts to image_url content", () => {
 		const prompt: LanguageModelV3Prompt = [
 			{
 				role: "user",
-				content: [{ type: "file", mediaType: "image/png", data: "aGVsbG8=" }],
+				content: [
+					{ type: "text", text: "What is in this image?" },
+					{ type: "file", mediaType: "image/png", data: "aGVsbG8=" },
+				],
 			},
 		];
 
-		expect(() => convertToAISearchMessages(prompt)).toThrow(/only supports text/);
+		expect(convertToAISearchMessages(prompt)).toEqual([
+			{
+				role: "user",
+				content: [
+					{ type: "text", text: "What is in this image?" },
+					{ type: "image_url", image_url: { url: "data:image/png;base64,aGVsbG8=" } },
+				],
+			},
+		]);
+	});
+
+	it("converts non-image file parts to file content", () => {
+		const prompt: LanguageModelV3Prompt = [
+			{
+				role: "user",
+				content: [
+					{ type: "text", text: "Summarize this document" },
+					{ type: "file", mediaType: "application/pdf", data: "cGRmZGF0YQ==" },
+				],
+			},
+		];
+
+		expect(convertToAISearchMessages(prompt)).toEqual([
+			{
+				role: "user",
+				content: [
+					{ type: "text", text: "Summarize this document" },
+					{ type: "file", file: { url: "data:application/pdf;base64,cGRmZGF0YQ==" } },
+				],
+			},
+		]);
+	});
+
+	it("keeps simple string content when no file parts are present", () => {
+		const prompt: LanguageModelV3Prompt = [
+			{
+				role: "user",
+				content: [
+					{ type: "text", text: "line one" },
+					{ type: "text", text: "line two" },
+				],
+			},
+		];
+
+		expect(convertToAISearchMessages(prompt)).toEqual([
+			{ role: "user", content: "line one\nline two" },
+		]);
 	});
 });

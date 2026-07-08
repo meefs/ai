@@ -1,4 +1,4 @@
-import type { LanguageModelV3, SharedV3Warning } from "@ai-sdk/provider";
+import type { LanguageModelV3, LanguageModelV3ToolCall } from "@ai-sdk/provider";
 import type { AISearchChatSettings } from "./aisearch-chat-settings";
 import { convertToAISearchMessages } from "./convert-to-aisearch-chat-messages";
 import { mapAISearchFinishReason } from "./map-aisearch-finish-reason";
@@ -10,6 +10,76 @@ type AISearchChatConfig = {
 	provider: string;
 	binding: AiSearchInstance;
 };
+
+/**
+ * Extract tool calls from an OpenAI-compatible chat completion response.
+ */
+function extractToolCalls(output: Record<string, unknown>): LanguageModelV3ToolCall[] {
+	const choices = output.choices as
+		| Array<{
+				message?: {
+					tool_calls?: Array<{
+						id?: string;
+						function?: { name?: string; arguments?: unknown };
+					}>;
+				};
+		  }>
+		| undefined;
+
+	const rawCalls = choices?.[0]?.message?.tool_calls;
+	if (!Array.isArray(rawCalls) || rawCalls.length === 0) {
+		return [];
+	}
+
+	return rawCalls.map((tc) => ({
+		type: "tool-call" as const,
+		toolCallId: tc.id ?? crypto.randomUUID(),
+		toolName: tc.function?.name ?? "",
+		input:
+			typeof tc.function?.arguments === "string"
+				? tc.function.arguments
+				: JSON.stringify(tc.function?.arguments ?? {}),
+	}));
+}
+
+/**
+ * Map AI SDK V3 tools and toolChoice to OpenAI-compatible format.
+ */
+function prepareToolsAndToolChoice(
+	tools: Parameters<LanguageModelV3["doGenerate"]>[0]["tools"],
+	toolChoice: Parameters<LanguageModelV3["doGenerate"]>[0]["toolChoice"],
+) {
+	if (tools == null) {
+		return { tools: undefined, tool_choice: undefined };
+	}
+
+	const mapped = tools.map((tool) => ({
+		type: "function" as const,
+		function: {
+			name: tool.name,
+			description: tool.type === "function" ? tool.description : undefined,
+			parameters: tool.type === "function" ? tool.inputSchema : undefined,
+		},
+	}));
+
+	if (toolChoice == null) {
+		return { tools: mapped, tool_choice: undefined };
+	}
+
+	switch (toolChoice.type) {
+		case "auto":
+		case "none":
+		case "required":
+			return { tools: mapped, tool_choice: toolChoice.type };
+		case "tool":
+			return {
+				tools: mapped,
+				tool_choice: { type: "function" as const, function: { name: toolChoice.toolName } },
+			};
+		default:
+			throw new Error(`Unsupported tool choice type: ${(toolChoice as { type: string }).type}`);
+	}
+}
 
 export class AISearchChatLanguageModel implements LanguageModelV3 {
 	readonly specificationVersion = "v3";
@@ -31,76 +101,9 @@ export class AISearchChatLanguageModel implements LanguageModelV3 {
 		return this.config.provider;
 	}
 
-	private getWarnings({
-		tools,
-		toolChoice,
-		maxOutputTokens,
-		temperature,
-		stopSequences,
-		topP,
-		topK,
-		frequencyPenalty,
-		presencePenalty,
-		responseFormat,
-		seed,
-		includeRawChunks,
-	}: Parameters<LanguageModelV3["doGenerate"]>[0]): SharedV3Warning[] {
-		const warnings: SharedV3Warning[] = [];
-
-		if (tools != null && tools.length > 0) {
-			warnings.push({ feature: "tools", type: "unsupported" });
-		}
-
-		if (toolChoice != null) {
-			warnings.push({ feature: "toolChoice", type: "unsupported" });
-		}
-
-		if (maxOutputTokens != null) {
-			warnings.push({ feature: "maxOutputTokens", type: "unsupported" });
-		}
-
-		if (temperature != null) {
-			warnings.push({ feature: "temperature", type: "unsupported" });
-		}
-
-		if (stopSequences != null) {
-			warnings.push({ feature: "stopSequences", type: "unsupported" });
-		}
-
-		if (topP != null) {
-			warnings.push({ feature: "topP", type: "unsupported" });
-		}
-
-		if (topK != null) {
-			warnings.push({ feature: "topK", type: "unsupported" });
-		}
-
-		if (frequencyPenalty != null) {
-			warnings.push({ feature: "frequencyPenalty", type: "unsupported" });
-		}
-
-		if (presencePenalty != null) {
-			warnings.push({ feature: "presencePenalty", type: "unsupported" });
-		}
-
-		if (responseFormat?.type === "json") {
-			warnings.push({ feature: "responseFormat", type: "unsupported" });
-		}
-
-		if (seed != null) {
-			warnings.push({ feature: "seed", type: "unsupported" });
-		}
-
-		if (includeRawChunks === true) {
-			warnings.push({ feature: "includeRawChunks", type: "unsupported" });
-		}
-
-		return warnings;
-	}
-
 	private buildRequest(
-		prompt: Parameters<LanguageModelV3["doGenerate"]>[0]["prompt"],
-		options?: { stream?: boolean },
+		options: Parameters<LanguageModelV3["doGenerate"]>[0],
+		extra?: { stream?: boolean },
 	): AiSearchChatCompletionsRequest {
 		// `model` and `stream` are handled explicitly below; everything else on
 		// settings is forwarded to the binding as-is (see AISearchChatSettings).
@@ -112,47 +115,70 @@ export class AISearchChatLanguageModel implements LanguageModelV3 {
 			stream?: boolean;
 		};
 
+		// The binding type constrains message `content` to `string | null`, but the
+		// runtime API accepts structured content arrays for multimodal messages
+		// (images, files). The cast is safe — the binding passes the value through.
+		const messages = convertToAISearchMessages(options.prompt) as
+			AiSearchChatCompletionsRequest["messages"];
+
+		// Map AI SDK tools to OpenAI-compatible tool definitions.
+		const { tools, tool_choice } = prepareToolsAndToolChoice(
+			options.tools,
+			options.toolChoice,
+		);
+
 		return {
 			...settings,
-			messages: convertToAISearchMessages(prompt),
+			messages,
 			...(model ? { model } : {}),
-			...(options?.stream ? { stream: true } : {}),
+			...(extra?.stream ? { stream: true } : {}),
+			...(tools ? { tools } : {}),
+			...(tool_choice != null ? { tool_choice } : {}),
+			...(options.temperature != null ? { temperature: options.temperature } : {}),
+			...(options.maxOutputTokens != null ? { max_tokens: options.maxOutputTokens } : {}),
+			...(options.topP != null ? { top_p: options.topP } : {}),
+			...(options.topK != null ? { top_k: options.topK } : {}),
+			...(options.frequencyPenalty != null ? { frequency_penalty: options.frequencyPenalty } : {}),
+			...(options.presencePenalty != null ? { presence_penalty: options.presencePenalty } : {}),
+			...(options.stopSequences != null ? { stop: options.stopSequences } : {}),
+			...(options.seed != null ? { seed: options.seed } : {}),
+			...(options.responseFormat?.type === "json" ? { response_format: { type: "json_object" } } : {}),
 		};
 	}
 
 	async doGenerate(
 		options: Parameters<LanguageModelV3["doGenerate"]>[0],
 	): Promise<Awaited<ReturnType<LanguageModelV3["doGenerate"]>>> {
-		const warnings = this.getWarnings(options);
-		const output = await this.config.binding.chatCompletions(this.buildRequest(options.prompt));
+		const output = await this.config.binding.chatCompletions(this.buildRequest(options));
 		const chunks = output.chunks ?? [];
 		const messageContent = output.choices?.[0]?.message?.content;
+		const toolCalls = extractToolCalls(output as unknown as Record<string, unknown>);
 
 		return {
 			finishReason: mapAISearchFinishReason(output),
 			content: [
 				...chunks.map(mapAISearchChunkToSource),
+				...toolCalls,
 				{ type: "text" as const, text: messageContent == null ? "" : String(messageContent) },
 			],
 			usage: mapAISearchUsage(output),
-			warnings,
+			warnings: [],
 		};
 	}
 
 	async doStream(
 		options: Parameters<LanguageModelV3["doStream"]>[0],
 	): Promise<Awaited<ReturnType<LanguageModelV3["doStream"]>>> {
-		const warnings = this.getWarnings(options);
 		// The cast selects the streaming `chatCompletions` overload (which returns a
 		// ReadableStream); buildRequest's return type doesn't carry the `stream: true`
 		// literal on its own.
-		const request = this.buildRequest(options.prompt, {
+		const request = this.buildRequest(options, {
 			stream: true,
 		}) as AiSearchChatCompletionsRequest & { stream: true };
 		const response = await this.config.binding.chatCompletions(request);
 
 		return {
-			stream: prependStreamStart(getMappedAISearchStream(response), warnings),
+			stream: prependStreamStart(getMappedAISearchStream(response), []),
 		};
 	}
 }
